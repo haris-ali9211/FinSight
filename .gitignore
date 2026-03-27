@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# API credentials — never commit these
+assets/js/config.js
+.env
+
+# Build output
+dist/
+output/
+
+# OS files
+.DS_Store
+Thumbs.db

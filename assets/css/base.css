@@ -1,0 +1,93 @@
+/* ════════════════════════════════
+   BASE.CSS — Design tokens, reset, body, scrollbar
+   ════════════════════════════════ */
+
+/* ── Design Tokens ── */
+:root {
+  --bg-primary:     #080c14;
+  --bg-secondary:   #0d1220;
+  --bg-card:        #111827;
+  --bg-glass:       rgba(255, 255, 255, 0.04);
+  --border:         rgba(255, 255, 255, 0.08);
+  --border-glow:    rgba(99, 179, 237, 0.35);
+
+  --accent-blue:    #63b3ed;
+  --accent-cyan:    #76e4f7;
+  --accent-green:   #68d391;
+  --accent-amber:   #f6ad55;
+  --accent-red:     #fc8181;
+  --accent-purple:  #b794f4;
+
+  --text-primary:   #f0f6ff;
+  --text-secondary: #94a3b8;
+  --text-muted:     #4b5563;
+
+  --gradient-brand: linear-gradient(135deg, #63b3ed 0%, #76e4f7 50%, #b794f4 100%);
+  --gradient-card:  linear-gradient(145deg, rgba(99, 179, 237, 0.08) 0%, rgba(182, 148, 244, 0.04) 100%);
+
+  --shadow-glow:    0 0 40px rgba(99, 179, 237, 0.15);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Body ── */
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ── Background mesh ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%,  rgba(99, 179, 237, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 80%,  rgba(182, 148, 244, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 50% 50%,  rgba(118, 228, 247, 0.04) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 3px; }
+
+/* ── Skeleton shimmer utility ── */
+.skeleton {
+  animation: shimmer 1.6s infinite linear;
+  background: linear-gradient(
+    90deg,
+    var(--bg-card) 25%,
+    rgba(255, 255, 255, 0.05) 50%,
+    var(--bg-card) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  from { background-position:  200% 0; }
+  to   { background-position: -200% 0; }
+}

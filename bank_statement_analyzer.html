@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinSight — Bank Statement Analyzer</title>
+  <meta name="description" content="AI-powered bank statement analysis. Upload your PDF, get instant insights on demographics, stamps, and monthly statistics." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    /* ===== DESIGN TOKENS ===== */
+    :root {
+      --bg-primary:    #080c14;
+      --bg-secondary:  #0d1220;
+      --bg-card:       #111827;
+      --bg-glass:      rgba(255,255,255,0.04);
+      --border:        rgba(255,255,255,0.08);
+      --border-glow:   rgba(99,179,237,0.35);
+      --accent-blue:   #63b3ed;
+      --accent-cyan:   #76e4f7;
+      --accent-green:  #68d391;
+      --accent-amber:  #f6ad55;
+      --accent-red:    #fc8181;
+      --accent-purple: #b794f4;
+      --text-primary:  #f0f6ff;
+      --text-secondary:#94a3b8;
+      --text-muted:    #4b5563;
+      --gradient-brand: linear-gradient(135deg, #63b3ed 0%, #76e4f7 50%, #b794f4 100%);
+      --gradient-card:  linear-gradient(145deg, rgba(99,179,237,0.08) 0%, rgba(182,148,244,0.04) 100%);
+      --shadow-glow:   0 0 40px rgba(99,179,237,0.15);
+      --radius-sm:     8px;
+      --radius-md:     14px;
+      --radius-lg:     20px;
+      --radius-xl:     28px;
+      --transition:    0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ===== BACKGROUND MESH ===== */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(99,179,237,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(182,148,244,0.07) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(118,228,247,0.04) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===== LAYOUT ===== */
+    .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    /* ===== NAVBAR ===== */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(8,12,20,0.75);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: var(--gradient-brand);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text { background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      background: rgba(99,179,237,0.1);
+      border: 1px solid rgba(99,179,237,0.25);
+      border-radius: 100px;
+      color: var(--accent-blue);
+      letter-spacing: 0.05em;
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+    }
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+      background: rgba(118,228,247,0.08);
+      border: 1px solid rgba(118,228,247,0.2);
+      border-radius: 100px;
+      padding: 6px 16px;
+      margin-bottom: 28px;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+    .hero h1 span { background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      max-width: 540px;
+      margin: 0 auto 40px;
+    }
+    .badge-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 52px;
+    }
+    .badge {
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 100px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge span { color: var(--accent-green); }
+
+    /* ===== UPLOAD ZONE ===== */
+    .upload-section { margin-bottom: 60px; }
+    .upload-card {
+      background: var(--bg-card);
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-xl);
+      padding: 60px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .upload-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--gradient-card);
+      opacity: 0;
+      transition: var(--transition);
+    }
+    .upload-card:hover, .upload-card.dragging {
+      border-color: var(--accent-blue);
+      box-shadow: var(--shadow-glow);
+    }
+    .upload-card:hover::before, .upload-card.dragging::before { opacity: 1; }
+    .upload-card.dragging { border-style: solid; transform: scale(1.01); }
+    .upload-icon-wrap {
+      width: 80px; height: 80px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, rgba(99,179,237,0.15), rgba(182,148,244,0.1));
+      border: 1px solid rgba(99,179,237,0.2);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 36px;
+      position: relative;
+      z-index: 1;
+    }
+    .upload-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+    .upload-sub {
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+      margin-bottom: 28px;
+      position: relative;
+      z-index: 1;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--gradient-brand);
+      color: #080c14;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 13px 28px;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      z-index: 1;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(99,179,237,0.3); }
+    .btn-primary:active { transform: translateY(0); }
+    .file-meta {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: rgba(104,211,145,0.08);
+      border: 1px solid rgba(104,211,145,0.2);
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+      margin-top: 24px;
+      position: relative;
+      z-index: 1;
+    }
+    .file-meta.visible { display: flex; }
+    .file-info { flex: 1; text-align: left; }
+    .file-name { font-weight: 600; font-size: 0.9rem; }
+    .file-size { font-size: 0.78rem; color: var(--text-secondary); }
+    .file-status { color: var(--accent-green); font-size: 20px; }
+    #fileinput { display: none; }
+
+    /* ===== API CONFIG ===== */
+    .config-section { margin-bottom: 60px; }
+    .section-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media(max-width: 640px) { .config-grid { grid-template-columns: 1fr; } }
+    .input-group { display: flex; flex-direction: column; gap: 8px; }
+    .input-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .input-wrap { position: relative; }
+    .input-wrap input, .input-wrap select {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px 12px 44px;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      outline: none;
+      transition: var(--transition);
+    }
+    .input-wrap input:focus, .input-wrap select:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(99,179,237,0.1);
+    }
+    .input-wrap select { font-family: 'Inter', sans-serif; }
+    .input-icon {
+      position: absolute;
+      left: 14px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      pointer-events: none;
+      color: var(--text-muted);
+    }
+
+    /* ===== ANALYZE BUTTON ===== */
+    .analyze-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--gradient-brand);
+      color: #080c14;
+      font-weight: 800;
+      font-size: 1rem;
+      padding: 18px 32px;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-bottom: 60px;
+      letter-spacing: 0.01em;
+    }
+    .analyze-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(99,179,237,0.35); }
+    .analyze-btn:active:not(:disabled) { transform: translateY(0); }
+    .analyze-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    /* ===== PROGRESS PIPELINE ===== */
+    .pipeline { display: none; margin-bottom: 60px; }
+    .pipeline.visible { display: block; }
+    .pipeline-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 16px; color: var(--text-secondary); }
+    .pipeline-steps {
+      display: flex;
+      gap: 0;
+      position: relative;
+    }
+    .pipeline-steps::before {
+      content: '';
+      position: absolute;
+      top: 20px; left: 20px; right: 20px;
+      height: 2px;
+      background: var(--border);
+      z-index: 0;
+    }
+    .pipeline-fill {
+      position: absolute;
+      top: 20px; left: 20px;
+      height: 2px;
+      background: var(--gradient-brand);
+      z-index: 1;
+      transition: width 0.6s ease;
+      width: 0%;
+    }
+    .step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      z-index: 2;
+    }
+    .step-dot {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      transition: var(--transition);
+    }
+    .step.active .step-dot   { border-color: var(--accent-blue); box-shadow: 0 0 16px rgba(99,179,237,0.4); background: rgba(99,179,237,0.12); animation: pulse-dot 1.4s infinite; }
+    .step.done .step-dot     { border-color: var(--accent-green); background: rgba(104,211,145,0.12); }
+    .step.error .step-dot    { border-color: var(--accent-red); background: rgba(252,129,129,0.12); }
+    .step-label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-align: center; line-height: 1.3; }
+    .step.active .step-label { color: var(--accent-blue); }
+    .step.done   .step-label { color: var(--accent-green); }
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(99,179,237,0.4); }
+      50%       { box-shadow: 0 0 0 6px rgba(99,179,237,0); }
+    }
+    .log-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-top: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      max-height: 120px;
+      overflow-y: auto;
+      line-height: 1.8;
+    }
+    .log-line { display: block; }
+    .log-line.ok   { color: var(--accent-green); }
+    .log-line.info { color: var(--accent-blue); }
+    .log-line.err  { color: var(--accent-red); }
+
+    /* ===== RESULTS ===== */
+    .results { display: none; }
+    .results.visible { display: block; }
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .results-title { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; }
+    .results-subtitle { font-size: 0.85rem; color: var(--text-secondary); }
+    .btn-export {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.82rem; font-weight: 600;
+      padding: 10px 18px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-export:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+    /* demographics card */
+    .results-grid { display: grid; gap: 20px; }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      background: linear-gradient(145deg, #111827 0%, #0d1220 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--gradient-brand);
+      opacity: 0.5;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .card-icon {
+      width: 42px; height: 42px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .card-icon.blue   { background: rgba(99,179,237,0.12); border: 1px solid rgba(99,179,237,0.2); }
+    .card-icon.green  { background: rgba(104,211,145,0.12); border: 1px solid rgba(104,211,145,0.2); }
+    .card-icon.purple { background: rgba(182,148,244,0.12); border: 1px solid rgba(182,148,244,0.2); }
+    .card-icon.amber  { background: rgba(246,173,85,0.12); border: 1px solid rgba(246,173,85,0.2); }
+    .card-title { font-size: 1rem; font-weight: 700; }
+    .card-subtitle { font-size: 0.78rem; color: var(--text-secondary); }
+
+    /* demographics fields */
+    .demo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .demo-field { display: flex; flex-direction: column; gap: 4px; }
+    .demo-key { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .demo-value { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
+    .demo-value.empty { color: var(--text-muted); font-style: italic; font-family: 'Inter', sans-serif; font-weight: 400; }
+
+    /* stamp */
+    .stamp-row { display: flex; align-items: center; gap: 24px; }
+    .stamp-indicator {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      flex-shrink: 0;
+    }
+    .stamp-indicator.present  { background: rgba(104,211,145,0.12); border: 2px solid rgba(104,211,145,0.3); }
+    .stamp-indicator.absent   { background: rgba(252,129,129,0.12); border: 2px solid rgba(252,129,129,0.3); }
+    .stamp-indicator.unknown  { background: rgba(246,173,85,0.12); border: 2px solid rgba(246,173,85,0.3); }
+    .stamp-info { flex: 1; }
+    .stamp-status { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+    .stamp-desc { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; }
+    .stamp-confidence {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 10px;
+      font-size: 0.75rem; font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 100px;
+      background: rgba(246,173,85,0.1);
+      border: 1px solid rgba(246,173,85,0.2);
+      color: var(--accent-amber);
+    }
+
+    /* monthly stats */
+    .months-scroll { overflow-x: auto; padding-bottom: 8px; }
+    .months-table { width: 100%; border-collapse: collapse; min-width: 640px; }
+    .months-table th {
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0 16px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .months-table td {
+      padding: 14px 16px;
+      font-size: 0.85rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: middle;
+    }
+    .months-table tr:last-child td { border-bottom: none; }
+    .months-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .month-name { font-weight: 600; }
+    .amount { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+    .amount.pos { color: var(--accent-green); }
+    .amount.neg { color: var(--accent-red); }
+    .amount.neu { color: var(--text-primary); }
+    .mini-bar-wrap { width: 80px; height: 6px; background: var(--bg-secondary); border-radius: 100px; overflow: hidden; }
+    .mini-bar { height: 100%; border-radius: 100px; background: var(--gradient-brand); transition: width 0.8s ease; }
+
+    /* summary metrics */
+    .metrics-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; margin-top: 20px; }
+    .metric {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .metric-label { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .metric-value { font-size: 1.15rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+    .metric-value.blue   { color: var(--accent-blue); }
+    .metric-value.green  { color: var(--accent-green); }
+    .metric-value.amber  { color: var(--accent-amber); }
+    .metric-value.purple { color: var(--accent-purple); }
+
+    /* ===== FOOTER ===== */
+    footer {
+      margin-top: 80px;
+      border-top: 1px solid var(--border);
+      padding: 28px 0;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    footer span { color: var(--accent-blue); }
+
+    /* ===== SKELETON LOADER ===== */
+    .skeleton { animation: shimmer 1.6s infinite linear; background: linear-gradient(90deg, var(--bg-card) 25%, rgba(255,255,255,0.05) 50%, var(--bg-card) 75%); background-size: 200% 100%; border-radius: var(--radius-sm); }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <div class="logo">
+        <div class="logo-icon">💹</div>
+        <span class="logo-text">FinSight</span>
+      </div>
+      <div class="nav-badge">AI-Powered OCR</div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="container">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-tag">✦ Intelligent Bank Statement Analysis</div>
+      <h1>Extract insights from<br /><span>any bank statement</span></h1>
+      <p>Upload a PDF, let PaddleOCR read it, and get structured demographics, stamp detection, and monthly financials — in seconds.</p>
+      <div class="badge-row">
+        <div class="badge">🔍 <span>PaddleOCR</span> Text Extraction</div>
+        <div class="badge">🤖 <span>GPT-4o</span> Data Parsing</div>
+        <div class="badge">📄 Up to <span>100</span> Pages</div>
+        <div class="badge">🔒 <span>No data</span> stored</div>
+      </div>
+    </section>
+
+    <!-- UPLOAD -->
+    <section class="upload-section">
+      <div class="section-label">Step 1 — Upload Statement</div>
+      <div class="upload-card" id="dropzone">
+        <div class="upload-icon-wrap">📄</div>
+        <div class="upload-title">Drag & drop your PDF here</div>
+        <div class="upload-sub">Supports multi-page bank statements up to 100 pages · PDF only</div>
+        <button class="btn-primary" onclick="document.getElementById('fileinput').click()">
+          📂 Browse Files
+        </button>
+        <input type="file" id="fileinput" accept=".pdf" />
+        <div class="file-meta" id="filemeta">
+          <div class="file-status">✅</div>
+          <div class="file-info">
+            <div class="file-name" id="filename">—</div>
+            <div class="file-size" id="filesize">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONFIG -->
+    <section class="config-section">
+      <div class="section-label">Step 2 — Configure APIs</div>
+      <div class="config-grid">
+        <div class="input-group">
+          <label class="input-label">PaddleOCR API Key</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔑</span>
+            <input type="password" id="paddle-key" placeholder="pp-xxxxxxxxxxxxxxxx" autocomplete="off" />
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">PaddleOCR Endpoint URL</label>
+          <div class="input-wrap">
+            <span class="input-icon">🌐</span>
+            <input type="text" id="paddle-url" placeholder="https://your-paddle-api.example.com/ocr" />
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">LLM Provider</label>
+          <div class="input-wrap">
+            <span class="input-icon">🤖</span>
+            <select id="llm-provider">
+              <option value="openai">OpenAI (GPT-4o)</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="claude">Anthropic Claude</option>
+            </select>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">LLM API Key</label>
+          <div class="input-wrap">
+            <span class="input-icon">🗝️</span>
+            <input type="password" id="llm-key" placeholder="sk-xxxxxxxxxxxxxxxx" autocomplete="off" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYZE BTN -->
+    <button class="analyze-btn" id="analyze-btn" disabled onclick="startAnalysis()">
+      <span id="analyze-icon">⚡</span>
+      <span id="analyze-text">Analyze Statement</span>
+    </button>
+
+    <!-- PIPELINE -->
+    <section class="pipeline" id="pipeline">
+      <div class="pipeline-title">Processing pipeline</div>
+      <div class="pipeline-steps">
+        <div class="pipeline-fill" id="pipeline-fill"></div>
+        <div class="step" id="step-upload">
+          <div class="step-dot">📤</div>
+          <div class="step-label">PDF<br />Upload</div>
+        </div>
+        <div class="step" id="step-ocr">
+          <div class="step-dot">🔍</div>
+          <div class="step-label">OCR<br />Extraction</div>
+        </div>
+        <div class="step" id="step-parse">
+          <div class="step-dot">🧠</div>
+          <div class="step-label">AI<br />Parsing</div>
+        </div>
+        <div class="step" id="step-results">
+          <div class="step-dot">📊</div>
+          <div class="step-label">Results<br />Ready</div>
+        </div>
+      </div>
+      <div class="log-box" id="log-box"></div>
+    </section>
+
+    <!-- RESULTS -->
+    <section class="results" id="results">
+      <div class="results-header">
+        <div>
+          <div class="results-title">Analysis Results</div>
+          <div class="results-subtitle" id="results-meta"></div>
+        </div>
+        <button class="btn-export" onclick="exportJSON()">⬇ Export JSON</button>
+      </div>
+
+      <div class="results-grid">
+
+        <!-- 1. Demographics -->
+        <div class="card" id="card-demo">
+          <div class="card-header">
+            <div class="card-icon blue">🏦</div>
+            <div>
+              <div class="card-title">Demographic Details</div>
+              <div class="card-subtitle">Bank, account, and statement metadata</div>
+            </div>
+          </div>
+          <div class="demo-grid" id="demo-fields"></div>
+        </div>
+
+        <!-- 2. Stamp -->
+        <div class="card" id="card-stamp">
+          <div class="card-header">
+            <div class="card-icon amber">🔏</div>
+            <div>
+              <div class="card-title">Stamp Detection</div>
+              <div class="card-subtitle">Official bank stamp & signature presence</div>
+            </div>
+          </div>
+          <div class="stamp-row">
+            <div class="stamp-indicator" id="stamp-indicator">❓</div>
+            <div class="stamp-info">
+              <div class="stamp-status" id="stamp-status">Analysing…</div>
+              <div class="stamp-desc" id="stamp-desc"></div>
+              <div class="stamp-confidence" id="stamp-confidence"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Monthly Stats -->
+        <div class="card" id="card-monthly">
+          <div class="card-header">
+            <div class="card-icon purple">📈</div>
+            <div>
+              <div class="card-title">Monthly Statistics</div>
+              <div class="card-subtitle">Balance trends per statement month</div>
+            </div>
+          </div>
+
+          <!-- summary metrics row -->
+          <div class="metrics-row" id="summary-metrics"></div>
+
+          <br />
+          <div class="months-scroll">
+            <table class="months-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Min Balance</th>
+                  <th>Max Balance</th>
+                  <th>Avg Balance</th>
+                  <th>Credits</th>
+                  <th>Debits</th>
+                  <th>Trend</th>
+                </tr>
+              </thead>
+              <tbody id="months-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      Built with <span>PaddleOCR</span> + <span>GPT-4o</span> · FinSight v1.0 · All processing is client-initiated
+    </div>
+  </footer>
+
+  <script>
+    // ════════════════════════════════════════
+    //  STATE
+    // ════════════════════════════════════════
+    let uploadedFile = null;
+    let analysisResult = null;
+
+    // ════════════════════════════════════════
+    //  FILE UPLOAD
+    // ════════════════════════════════════════
+    const dropzone  = document.getElementById('dropzone');
+    const fileinput = document.getElementById('fileinput');
+    const filemeta  = document.getElementById('filemeta');
+    const analyzeBtn = document.getElementById('analyze-btn');
+
+    ['dragover','dragenter'].forEach(e => dropzone.addEventListener(e, ev => {
+      ev.preventDefault(); dropzone.classList.add('dragging');
+    }));
+    ['dragleave','drop'].forEach(e => dropzone.addEventListener(e, ev => {
+      ev.preventDefault(); dropzone.classList.remove('dragging');
+      if (e === 'drop' && ev.dataTransfer.files[0]) handleFile(ev.dataTransfer.files[0]);
+    }));
+    fileinput.addEventListener('change', () => { if (fileinput.files[0]) handleFile(fileinput.files[0]); });
+
+    function handleFile(file) {
+      if (!file.name.toLowerCase().endsWith('.pdf')) {
+        alert('Please upload a PDF file.'); return;
+      }
+      uploadedFile = file;
+      document.getElementById('filename').textContent = file.name;
+      document.getElementById('filesize').textContent = formatBytes(file.size);
+      filemeta.classList.add('visible');
+      checkReady();
+    }
+
+    function formatBytes(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+      return (b/1048576).toFixed(1) + ' MB';
+    }
+
+    function checkReady() {
+      const ready = uploadedFile &&
+                    document.getElementById('paddle-key').value.trim() &&
+                    document.getElementById('paddle-url').value.trim() &&
+                    document.getElementById('llm-key').value.trim();
+      analyzeBtn.disabled = !ready;
+    }
+
+    ['paddle-key','paddle-url','llm-key','llm-provider'].forEach(id =>
+      document.getElementById(id).addEventListener('input', checkReady)
+    );
+
+    // ════════════════════════════════════════
+    //  PIPELINE HELPERS
+    // ════════════════════════════════════════
+    function setStep(stepId, status) {
+      // status: 'active' | 'done' | 'error' | ''
+      document.getElementById(stepId).className = 'step ' + status;
+    }
+    const fillWidths = { 'step-upload': '0%', 'step-ocr': '33%', 'step-parse': '66%', 'step-results': '100%' };
+
+    function activateStep(stepId) {
+      ['step-upload','step-ocr','step-parse','step-results'].forEach(s => {
+        if (s === stepId) setStep(s, 'active');
+      });
+      document.getElementById('pipeline-fill').style.width = fillWidths[stepId];
+    }
+    function completeStep(stepId) { setStep(stepId, 'done'); }
+
+    function log(msg, type = 'info') {
+      const box = document.getElementById('log-box');
+      const line = document.createElement('span');
+      line.className = 'log-line ' + type;
+      const ts = new Date().toLocaleTimeString();
+      line.textContent = `[${ts}] ${msg}`;
+      box.appendChild(line);
+      box.appendChild(document.createElement('br'));
+      box.scrollTop = box.scrollHeight;
+    }
+
+    // ════════════════════════════════════════
+    //  MAIN ANALYSIS FLOW
+    // ════════════════════════════════════════
+    async function startAnalysis() {
+      if (!uploadedFile) return;
+
+      const paddleKey  = document.getElementById('paddle-key').value.trim();
+      const paddleUrl  = document.getElementById('paddle-url').value.trim();
+      const llmKey     = document.getElementById('llm-key').value.trim();
+      const llmProvider = document.getElementById('llm-provider').value;
+
+      // Reset UI
+      document.getElementById('pipeline').classList.add('visible');
+      document.getElementById('results').classList.remove('visible');
+      document.getElementById('log-box').innerHTML = '';
+      analyzeBtn.disabled = true;
+      document.getElementById('analyze-icon').textContent = '⏳';
+      document.getElementById('analyze-text').textContent = 'Analyzing…';
+
+      try {
+        // ── STEP 1: PDF to images via pdf.js ──
+        activateStep('step-upload');
+        log('Reading PDF file…');
+        const images = await pdfToImages(uploadedFile);
+        log(`✓ Extracted ${images.length} page(s) as images`, 'ok');
+        completeStep('step-upload');
+
+        // ── STEP 2: OCR ──
+        activateStep('step-ocr');
+        log('Sending pages to PaddleOCR…');
+        const rawText = await runOCR(images, paddleUrl, paddleKey);
+        log(`✓ OCR complete — ${rawText.length} characters extracted`, 'ok');
+        completeStep('step-ocr');
+
+        // ── STEP 3: LLM Parsing ──
+        activateStep('step-parse');
+        log(`Parsing with ${llmProvider.toUpperCase()} LLM…`);
+        analysisResult = await parseWithLLM(rawText, llmKey, llmProvider);
+        log('✓ AI parsing complete', 'ok');
+        completeStep('step-parse');
+
+        // ── STEP 4: Render ──
+        activateStep('step-results');
+        renderResults(analysisResult);
+        completeStep('step-results');
+        document.getElementById('pipeline-fill').style.width = '100%';
+        document.getElementById('results').classList.add('visible');
+        document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      } catch (err) {
+        log('✗ Error: ' + err.message, 'err');
+        console.error(err);
+        ['step-upload','step-ocr','step-parse','step-results'].forEach(s => {
+          if (document.getElementById(s).classList.contains('active')) setStep(s, 'error');
+        });
+      } finally {
+        analyzeBtn.disabled = false;
+        document.getElementById('analyze-icon').textContent = '⚡';
+        document.getElementById('analyze-text').textContent = 'Analyze Statement';
+      }
+    }
+
+    // ════════════════════════════════════════
+    //  PDF → IMAGES (pdf.js)
+    // ════════════════════════════════════════
+    async function pdfToImages(file) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const pages = [];
+      const scale = 2; // higher = better OCR quality
+
+      for (let i = 1; i <= Math.min(pdf.numPages, 100); i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width  = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        pages.push(canvas.toDataURL('image/jpeg', 0.85));
+        log(`  Page ${i}/${Math.min(pdf.numPages, 100)} rendered`);
+      }
+      return pages;
+    }
+
+    // ════════════════════════════════════════
+    //  OCR — PaddleOCR API
+    // ════════════════════════════════════════
+    async function runOCR(images, apiUrl, apiKey) {
+      // Send pages in batches of 5
+      const batchSize = 5;
+      let allText = '';
+
+      for (let i = 0; i < images.length; i += batchSize) {
+        const batch = images.slice(i, i + batchSize);
+        log(`  OCR batch ${Math.floor(i/batchSize)+1}/${Math.ceil(images.length/batchSize)}…`);
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            images: batch.map(b64 => b64.split(',')[1]),  // strip data:image/jpeg;base64,
+            language: 'en',
+            return_word_box: false
+          })
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`PaddleOCR API error ${response.status}: ${errText}`);
+        }
+
+        const data = await response.json();
+        // Support common response shapes
+        const pageTexts = data.results || data.texts || data.data || [];
+        if (Array.isArray(pageTexts)) {
+          pageTexts.forEach(pt => {
+            const t = typeof pt === 'string' ? pt
+                    : pt.text || pt.content || JSON.stringify(pt);
+            allText += t + '\n';
+          });
+        } else {
+          allText += JSON.stringify(data) + '\n';
+        }
+      }
+      return allText;
+    }
+
+    // ════════════════════════════════════════
+    //  LLM PARSING
+    // ════════════════════════════════════════
+    async function parseWithLLM(rawText, apiKey, provider) {
+      const prompt = buildPrompt(rawText);
+      let url, headers, body;
+
+      if (provider === 'openai') {
+        url = 'https://api.openai.com/v1/chat/completions';
+        headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
+        body = JSON.stringify({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.1,
+          response_format: { type: 'json_object' }
+        });
+
+      } else if (provider === 'gemini') {
+        url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+        headers = { 'Content-Type': 'application/json' };
+        body = JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+        });
+
+      } else { // claude
+        url = 'https://api.anthropic.com/v1/messages';
+        headers = {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        };
+        body = JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 4096,
+          messages: [{ role: 'user', content: prompt }]
+        });
+      }
+
+      const res = await fetch(url, { method: 'POST', headers, body });
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`LLM API error ${res.status}: ${err}`);
+      }
+      const data = await res.json();
+
+      // Extract content text from different providers
+      let content = '';
+      if (provider === 'openai')  content = data.choices?.[0]?.message?.content || '';
+      if (provider === 'gemini')  content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (provider === 'claude')  content = data.content?.[0]?.text || '';
+
+      // Parse JSON out of the content
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('LLM did not return valid JSON');
+      return JSON.parse(jsonMatch[0]);
+    }
+
+    function buildPrompt(rawText) {
+      return `You are a financial document parser. Analyze the following raw OCR text extracted from a bank statement PDF and return a JSON object with EXACTLY this structure:
+
+{
+  "demographics": {
+    "bank_name": "string or null",
+    "account_title": "string or null",
+    "account_number": "string or null",
+    "iban": "string or null",
+    "branch": "string or null",
+    "statement_period": "string or null",
+    "statement_date": "string or null",
+    "currency": "string or null",
+    "address": "string or null"
+  },
+  "stamp": {
+    "present": true | false | null,
+    "confidence": "high" | "medium" | "low",
+    "description": "one sentence about stamp/signature presence"
+  },
+  "monthly_stats": [
+    {
+      "month": "e.g. January 2024",
+      "min_balance": number or null,
+      "max_balance": number or null,
+      "avg_balance": number or null,
+      "total_credits": number or null,
+      "total_debits": number or null
+    }
+  ],
+  "summary": {
+    "overall_min": number or null,
+    "overall_max": number or null,
+    "overall_avg": number or null,
+    "total_months": number,
+    "total_credits": number or null,
+    "total_debits": number or null
+  }
+}
+
+Rules:
+- Use null for any field you cannot determine from the text.
+- For stamp.present: true if you see words like "stamp", "seal", "verified", "authenticated", or visual stamp indicators in the OCR; false if explicitly absent; null if uncertain.
+- For monthly_stats, extract one entry per month found in the statement.
+- All numeric values must be plain numbers (no currency symbols).
+- Return ONLY the JSON object, no other text.
+
+RAW OCR TEXT:
+${rawText.slice(0, 15000)}`; // limit to avoid token overflow
+    }
+
+    // ════════════════════════════════════════
+    //  RENDER RESULTS
+    // ════════════════════════════════════════
+    function renderResults(data) {
+      document.getElementById('results-meta').textContent =
+        `Statement analyzed · ${new Date().toLocaleString()}`;
+
+      renderDemographics(data.demographics || {});
+      renderStamp(data.stamp || {});
+      renderMonthly(data.monthly_stats || [], data.summary || {});
+    }
+
+    function renderDemographics(d) {
+      const fields = [
+        { key: 'Bank Name',        val: d.bank_name },
+        { key: 'Account Title',    val: d.account_title },
+        { key: 'Account Number',   val: d.account_number },
+        { key: 'IBAN',             val: d.iban },
+        { key: 'Branch',           val: d.branch },
+        { key: 'Statement Period', val: d.statement_period },
+        { key: 'Statement Date',   val: d.statement_date },
+        { key: 'Currency',         val: d.currency },
+        { key: 'Address',          val: d.address },
+      ];
+
+      const container = document.getElementById('demo-fields');
+      container.innerHTML = fields.map(f => `
+        <div class="demo-field">
+          <div class="demo-key">${f.key}</div>
+          <div class="demo-value ${f.val ? '' : 'empty'}">${f.val || 'Not found'}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderStamp(s) {
+      const indicator = document.getElementById('stamp-indicator');
+      const status    = document.getElementById('stamp-status');
+      const desc      = document.getElementById('stamp-desc');
+      const conf      = document.getElementById('stamp-confidence');
+
+      if (s.present === true) {
+        indicator.textContent = '✅';
+        indicator.className = 'stamp-indicator present';
+        status.textContent = 'Stamp / Seal Detected';
+        status.style.color = 'var(--accent-green)';
+      } else if (s.present === false) {
+        indicator.textContent = '❌';
+        indicator.className = 'stamp-indicator absent';
+        status.textContent = 'No Stamp Found';
+        status.style.color = 'var(--accent-red)';
+      } else {
+        indicator.textContent = '❓';
+        indicator.className = 'stamp-indicator unknown';
+        status.textContent = 'Inconclusive';
+        status.style.color = 'var(--accent-amber)';
+      }
+      desc.textContent = s.description || '';
+      conf.textContent = `🎯 Confidence: ${s.confidence || 'unknown'}`;
+    }
+
+    function fmtNum(n) {
+      if (n === null || n === undefined) return '—';
+      return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderMonthly(months, summary) {
+      // Summary metrics
+      const metricsData = [
+        { label: 'Overall Min', val: fmtNum(summary.overall_min),   cls: 'amber' },
+        { label: 'Overall Max', val: fmtNum(summary.overall_max),   cls: 'green' },
+        { label: 'Overall Avg', val: fmtNum(summary.overall_avg),   cls: 'blue' },
+        { label: 'Total Credits', val: fmtNum(summary.total_credits), cls: 'green' },
+        { label: 'Total Debits',  val: fmtNum(summary.total_debits),  cls: 'amber' },
+        { label: 'Months',        val: summary.total_months || months.length, cls: 'purple' },
+      ];
+      document.getElementById('summary-metrics').innerHTML = metricsData.map(m => `
+        <div class="metric">
+          <div class="metric-label">${m.label}</div>
+          <div class="metric-value ${m.cls}">${m.val}</div>
+        </div>
+      `).join('');
+
+      // Table
+      const maxAvg = Math.max(...months.map(m => m.avg_balance || 0), 1);
+      const tbody = document.getElementById('months-tbody');
+      if (months.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="color:var(--text-muted);text-align:center;padding:32px">No monthly data found</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = months.map(m => {
+        const barW = Math.min(100, ((m.avg_balance || 0) / maxAvg) * 100).toFixed(0);
+        return `
+        <tr>
+          <td class="month-name">${m.month || '—'}</td>
+          <td class="amount">${fmtNum(m.min_balance)}</td>
+          <td class="amount pos">${fmtNum(m.max_balance)}</td>
+          <td class="amount neu">${fmtNum(m.avg_balance)}</td>
+          <td class="amount pos">${fmtNum(m.total_credits)}</td>
+          <td class="amount neg">${fmtNum(m.total_debits)}</td>
+          <td>
+            <div class="mini-bar-wrap"><div class="mini-bar" style="width:${barW}%"></div></div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ════════════════════════════════════════
+    //  EXPORT
+    // ════════════════════════════════════════
+    function exportJSON() {
+      if (!analysisResult) return;
+      const blob = new Blob([JSON.stringify(analysisResult, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'bank_statement_analysis.json';
+      a.click();
+    }
+  </script>
+</body>
+</html>

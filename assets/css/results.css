@@ -1,0 +1,302 @@
+/* ════════════════════════════════
+   RESULTS.CSS — Cards, demographics, stamp, monthly stats, metrics
+   ════════════════════════════════ */
+
+/* ── Results section ── */
+.results {
+  display: none;
+}
+
+.results.visible {
+  display: block;
+}
+
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.results-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.results-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* ── Export button ── */
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 10px 18px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-export:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+/* ── Results grid ── */
+.results-grid {
+  display: grid;
+  gap: 20px;
+}
+
+/* ── Card ── */
+.card {
+  background: linear-gradient(145deg, #111827 0%, #0d1220 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+/**
+ * Make specific cards span full width if needed
+ */
+#card-monthly, #card-transactions {
+  grid-column: 1 / -1;
+}
+
+/* Top accent line */
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gradient-brand);
+  opacity: 0.5;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.card-icon.blue   { background: rgba(99, 179, 237, 0.12); border: 1px solid rgba(99, 179, 237, 0.2); }
+.card-icon.green  { background: rgba(104, 211, 145, 0.12); border: 1px solid rgba(104, 211, 145, 0.2); }
+.card-icon.purple { background: rgba(182, 148, 244, 0.12); border: 1px solid rgba(182, 148, 244, 0.2); }
+.card-icon.amber  { background: rgba(246, 173, 85, 0.12); border: 1px solid rgba(246, 173, 85, 0.2); }
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.card-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+/* ── Demographics ── */
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.demo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.demo-key {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.demo-value {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.demo-value.empty {
+  color: var(--text-muted);
+  font-style: italic;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+}
+
+/* ── Stamp ── */
+.stamp-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.stamp-indicator {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.stamp-indicator.present { background: rgba(104, 211, 145, 0.12); border: 2px solid rgba(104, 211, 145, 0.3); }
+.stamp-indicator.absent  { background: rgba(252, 129, 129, 0.12); border: 2px solid rgba(252, 129, 129, 0.3); }
+.stamp-indicator.unknown { background: rgba(246, 173, 85, 0.12);  border: 2px solid rgba(246, 173, 85, 0.3);  }
+
+.stamp-info { flex: 1; }
+
+.stamp-status {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.stamp-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.stamp-confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 100px;
+  background: rgba(246, 173, 85, 0.1);
+  border: 1px solid rgba(246, 173, 85, 0.2);
+  color: var(--accent-amber);
+}
+
+/* ── Monthly Stats — Summary Metrics ── */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.metric {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metric-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.metric-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.metric-value.blue   { color: var(--accent-blue);   }
+.metric-value.green  { color: var(--accent-green);  }
+.metric-value.amber  { color: var(--accent-amber);  }
+.metric-value.purple { color: var(--accent-purple); }
+
+/* ── Monthly Stats — Table ── */
+.months-scroll {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.months-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.months-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0 16px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.months-table td {
+  padding: 14px 16px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+.months-table tr:last-child td { border-bottom: none; }
+.months-table tr:hover td      { background: rgba(255, 255, 255, 0.02); }
+
+.month-name { font-weight: 600; }
+
+.amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+}
+
+.amount.pos { color: var(--accent-green); }
+.amount.neg { color: var(--accent-red);   }
+.amount.neu { color: var(--text-primary); }
+
+/* ── Mini bar ── */
+.mini-bar-wrap {
+  width: 80px;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.mini-bar {
+  height: 100%;
+  border-radius: 100px;
+  background: var(--gradient-brand);
+  transition: width 0.8s ease;
+}

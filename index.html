@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinSight — Bank Statement Analyzer</title>
+  <meta name="description" content="AI-powered bank statement analysis. Upload your PDF, get instant insights on demographics, stamps, and monthly statistics." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="assets/css/base.css" />
+  <link rel="stylesheet" href="assets/css/layout.css" />
+  <link rel="stylesheet" href="assets/css/upload.css" />
+  <link rel="stylesheet" href="assets/css/pipeline.css" />
+  <link rel="stylesheet" href="assets/css/results.css" />
+</head>
+<body>
+
+  <!-- ── NAVBAR ── -->
+  <nav>
+    <div class="nav-inner">
+      <div class="logo">
+        <div class="logo-icon">💹</div>
+        <span class="logo-text">FinSight</span>
+      </div>
+      <div class="nav-badge">AI-Powered OCR</div>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <main class="container">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-tag">✦ Intelligent Bank Statement Analysis</div>
+      <h1>Extract insights from<br /><span>any bank statement</span></h1>
+      <p>Upload a PDF, let PaddleOCR read it, and get structured demographics, stamp detection, and monthly financials — in seconds.</p>
+      <div class="badge-row">
+        <div class="badge">🔍 <span>PaddleOCR</span> Text Extraction</div>
+        <div class="badge">🤖 <span>GPT-4o</span> Data Parsing</div>
+        <div class="badge">📄 Up to <span>100</span> Pages</div>
+        <div class="badge">🔒 <span>No data</span> stored</div>
+      </div>
+    </section>
+
+    <!-- UPLOAD -->
+    <section class="upload-section">
+      <div class="section-label">Upload Your Bank Statement</div>
+      <div class="upload-card" id="dropzone">
+        <div class="upload-icon-wrap">📄</div>
+        <div class="upload-title">Drag &amp; drop your PDF here</div>
+        <div class="upload-sub">Supports multi-page bank statements up to 100 pages · PDF only</div>
+        <button class="btn-primary" id="browse-btn">📂 Browse Files</button>
+        <input type="file" id="fileinput" accept=".pdf" />
+        <div class="file-meta" id="filemeta">
+          <div class="file-status">✅</div>
+          <div class="file-info">
+            <div class="file-name" id="filename">—</div>
+            <div class="file-size" id="filesize">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ANALYZE BUTTON -->
+    <button class="analyze-btn" id="analyze-btn" disabled>
+      <span id="analyze-icon">⚡</span>
+      <span id="analyze-text">Analyze Statement</span>
+    </button>
+
+    <!-- PIPELINE -->
+    <section class="pipeline" id="pipeline">
+      <div class="pipeline-title">Processing pipeline</div>
+      <div class="pipeline-steps">
+        <div class="pipeline-fill" id="pipeline-fill"></div>
+        <div class="step" id="step-upload">
+          <div class="step-dot">📄</div>
+          <div class="step-label">PDF<br />Ready</div>
+        </div>
+        <div class="step" id="step-ocr">
+          <div class="step-dot">🔍</div>
+          <div class="step-label">OCR<br />Extraction</div>
+        </div>
+        <div class="step" id="step-parse">
+          <div class="step-dot">🧠</div>
+          <div class="step-label">AI<br />Parsing</div>
+        </div>
+        <div class="step" id="step-results">
+          <div class="step-dot">📊</div>
+          <div class="step-label">Results<br />Ready</div>
+        </div>
+      </div>
+      <div class="log-box" id="log-box"></div>
+    </section>
+
+    <!-- RESULTS -->
+    <section class="results" id="results">
+      <div class="results-header">
+        <div>
+          <div class="results-title">Analysis Results</div>
+          <div class="results-subtitle" id="results-meta"></div>
+        </div>
+        <button class="btn-export" id="export-btn">⬇ Export JSON</button>
+      </div>
+
+      <div class="results-grid">
+
+        <!-- Demographics -->
+        <div class="card" id="card-demo">
+          <div class="card-header">
+            <div class="card-icon blue">🏦</div>
+            <div>
+              <div class="card-title">Demographic Details</div>
+              <div class="card-subtitle">Bank, account, and statement metadata</div>
+            </div>
+          </div>
+          <div class="demo-grid" id="demo-fields"></div>
+        </div>
+
+        <!-- Stamp Detection -->
+        <div class="card" id="card-stamp">
+          <div class="card-header">
+            <div class="card-icon amber">🔏</div>
+            <div>
+              <div class="card-title">Stamp Detection</div>
+              <div class="card-subtitle">Official bank stamp &amp; signature presence</div>
+            </div>
+          </div>
+          <div class="stamp-row">
+            <div class="stamp-indicator" id="stamp-indicator">❓</div>
+            <div class="stamp-info">
+              <div class="stamp-status" id="stamp-status">Analysing…</div>
+              <div class="stamp-desc" id="stamp-desc"></div>
+              <div class="stamp-confidence" id="stamp-confidence"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Statistics -->
+        <div class="card" id="card-monthly">
+          <div class="card-header">
+            <div class="card-icon purple">📈</div>
+            <div>
+              <div class="card-title">Monthly Statistics</div>
+              <div class="card-subtitle">Balance trends per statement month</div>
+            </div>
+          </div>
+          <div class="metrics-row" id="summary-metrics"></div>
+          <br />
+          <div class="months-scroll">
+            <table class="months-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Min Balance</th>
+                  <th>Max Balance</th>
+                  <th>Avg Balance</th>
+                  <th>Credits</th>
+                  <th>Debits</th>
+                  <th>Trend</th>
+                </tr>
+              </thead>
+              <tbody id="months-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Transactions -->
+        <div class="card" id="card-transactions">
+          <div class="card-header">
+            <div class="card-icon blue">📝</div>
+            <div>
+              <div class="card-title">Transactions List</div>
+              <div class="card-subtitle">Extracted line items from the statement</div>
+            </div>
+          </div>
+          <div class="months-scroll" style="max-height: 400px;">
+            <table class="months-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Type</th>
+                  <th>Balance</th>
+                </tr>
+              </thead>
+              <tbody id="trans-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /.results-grid -->
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      Built with <span>PaddleOCR</span> + <span>GPT-4o</span> · FinSight v1.0 · All processing is client-initiated
+    </div>
+  </footer>
+
+  <!-- JS Modules -->
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>
