@@ -1,7 +1,7 @@
 {
   "name": "finsight-proxy",
   "version": "1.0.0",
-  "description": "Local proxy server for FinSight — bypasses CORS for PaddleOCR API",
+  "description": "Local proxy server for FinSight — bypasses CORS for OCR API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

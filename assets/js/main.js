@@ -33,7 +33,7 @@ async function startAnalysis() {
   const file = uploadState.uploadedFile;
   if (!file) return;
 
-  const { paddleUrl, llmKey, llmProvider } = CONFIG;
+  const { ocrUrl, llmKey, llmProvider } = CONFIG;
 
   // Reset UI
   resetPipeline();
@@ -48,9 +48,9 @@ async function startAnalysis() {
     log(`File ready: ${file.name} (${(file.size / 1048576).toFixed(1)} MB)`);
     completeStep('step-upload');
 
-    // ── Step 2: OCR via PaddleOCR Layout Parsing ────
+    // ── Step 2: OCR via Layout Parsing ────
     activateStep('step-ocr');
-    const rawText = await runOCR(file, paddleUrl);
+    const rawText = await runOCR(file, ocrUrl);
     log(`✓ OCR complete — ${rawText.length} characters extracted`, 'ok');
     completeStep('step-ocr');
 

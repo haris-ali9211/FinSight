@@ -1,5 +1,5 @@
 /* ════════════════════════════════
-   OCR.JS — PaddleOCR Layout Parsing API
+   OCR.JS — Layout Parsing API
    Sends the PDF as base64 directly to the API.
    No page-by-page image extraction needed.
    ════════════════════════════════ */
@@ -7,7 +7,7 @@
 import { log } from './pipeline.js';
 
 /**
- * Send a PDF File to the local proxy, which forwards to PaddleOCR.
+ * Send a PDF File to the local proxy, which forwards to the OCR engine.
  * Returns concatenated markdown from all parsed sections.
  *
  * @param {File}   file     The PDF File object
@@ -29,7 +29,7 @@ export async function runOCR(file, proxyUrl) {
     useChartRecognition:        false,
   };
 
-  log('Sending PDF to PaddleOCR via proxy…');
+  log('Sending PDF to OCR via proxy…');
 
   const response = await fetch(proxyUrl, {
     method:  'POST',
@@ -39,7 +39,7 @@ export async function runOCR(file, proxyUrl) {
 
   if (!response.ok) {
     const errText = await response.text();
-    throw new Error(`PaddleOCR API error ${response.status}: ${errText}`);
+    throw new Error(`OCR API error ${response.status}: ${errText}`);
   }
 
   const data = await response.json();
@@ -48,7 +48,7 @@ export async function runOCR(file, proxyUrl) {
   const results = data?.result?.layoutParsingResults ?? [];
 
   if (results.length === 0) {
-    throw new Error('PaddleOCR returned no layout results. Check your file and API credentials.');
+    throw new Error('OCR API returned no layout results. Check your file and API credentials.');
   }
 
   log(`✓ Layout parsing complete — ${results.length} section(s) extracted`, 'ok');

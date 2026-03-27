@@ -5,7 +5,7 @@
  *
  * ┌──────────────────────────────────────────────────┐
  * │  http://localhost:3001        → index.html (app)  │
- * │  http://localhost:3001/api/ocr → PaddleOCR proxy  │
+ * │  http://localhost:3001/api/ocr → OCR Proxy        │
  * └──────────────────────────────────────────────────┘
  *
  * Start: node server.js
@@ -18,8 +18,8 @@ const path    = require('path');
 const url     = require('url');
 
 // ── Credentials ──
-const PADDLE_URL   = process.env.PADDLE_URL   || 'https://s6f7w0fbb5e2p3q6.aistudio-app.com/layout-parsing';
-const PADDLE_TOKEN = process.env.PADDLE_TOKEN || 'd425fe68f3ba5591a4e1d1feda4a016a28afd623';
+const OCR_URL   = process.env.OCR_URL   || 'https://s6f7w0fbb5e2p3q6.aistudio-app.com/layout-parsing';
+const OCR_TOKEN = process.env.OCR_TOKEN || 'd425fe68f3ba5591a4e1d1feda4a016a28afd623';
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -55,7 +55,7 @@ function httpsPost(targetUrl, token, bodyObj) {
         'Content-Type':  'application/json',
         'Content-Length': Buffer.byteLength(bodyStr),
       },
-      // No timeout — PaddleOCR needs as long as it needs for large PDFs
+      // No timeout — Document processing needs as long as it needs for large PDFs
     };
 
     const req = https.request(reqOptions, (res) => {
@@ -71,25 +71,25 @@ function httpsPost(targetUrl, token, bodyObj) {
 }
 
 // ───────────────────────────────────────────────────────
-//  POST /api/ocr  —  PaddleOCR Proxy
+//  POST /api/ocr  —  OCR Proxy
 // ───────────────────────────────────────────────────────
 app.post('/api/ocr', async (req, res) => {
   const mbSize = (JSON.stringify(req.body).length / 1024 / 1024).toFixed(1);
-  console.log(`[OCR Proxy] Request received — ${mbSize} MB — calling PaddleOCR (no timeout)…`);
+  console.log(`[OCR Proxy] Request received — ${mbSize} MB — calling OCR Engine (no timeout)…`);
 
   const tick = setInterval(() => process.stdout.write('.'), 5000); // heartbeat dots
 
   try {
-    const { status, body } = await httpsPost(PADDLE_URL, PADDLE_TOKEN, req.body);
+    const { status, body } = await httpsPost(OCR_URL, OCR_TOKEN, req.body);
     clearInterval(tick);
     process.stdout.write('\n');
 
     if (status < 200 || status >= 300) {
-      console.error(`[OCR Proxy] PaddleOCR error ${status}:`, body.slice(0, 300));
+      console.error(`[OCR Proxy] OCR Engine error ${status}:`, body.slice(0, 300));
       return res.status(status).json({ error: body });
     }
 
-    console.log(`[OCR Proxy] ✓ PaddleOCR responded — status ${status}`);
+    console.log(`[OCR Proxy] ✓ OCR Engine responded — status ${status}`);
     res.setHeader('Content-Type', 'application/json');
     res.status(200).send(body);
 
@@ -109,6 +109,6 @@ app.listen(PORT, () => {
   console.log('\n╔══════════════════════════════════════╗');
   console.log(`║  FinSight running at                  ║`);
   console.log(`║  → http://localhost:${PORT}             ║`);
-  console.log(`║  → POST /api/ocr  (PaddleOCR proxy)  ║`);
+  console.log(`║  → POST /api/ocr  (OCR Proxy)        ║`);
   console.log('╚══════════════════════════════════════╝\n');
 });

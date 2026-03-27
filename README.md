@@ -2,7 +2,7 @@
 
 FinSight is a modern, privacy-focused, premium web application designed to automatically extract and analyze financial data from bank statement PDFs.
 
-By combining the robustness of **PaddleOCR's Layout Parsing API** for raw text extraction and the intelligence of **Large Language Models (GPT-4o, Gemini, or Claude)** for structured data parsing, FinSight turns unstructured multi-page bank statements into clear, actionable insights in seconds.
+By combining the robustness of **Advanced OCR Layout Parsing** for raw text extraction and the intelligence of **Large Language Models** for structured data parsing, FinSight turns unstructured multi-page bank statements into clear, actionable insights in seconds.
 
 ---
 
@@ -25,7 +25,7 @@ The project is structured with a modular vanilla JavaScript frontend and a light
 
 ### File Structure
 ```text
-PaddleOCR/
+FinSight/
 ├── index.html               # Main application shell (No inline CSS/JS)
 ├── assets/
 │   ├── css/                 # Modular CSS architecture
@@ -38,7 +38,7 @@ PaddleOCR/
 │       ├── config.js        # 🔑 API Credentials (Gitignored)
 │       ├── main.js          # App entry point & orchestration
 │       ├── upload.js        # File input, drag-and-drop handlers
-│       ├── ocr.js           # PaddleOCR layout parsing integration
+│       ├── ocr.js           # OCR layout parsing integration
 │       ├── llm.js           # Prompt engineering and LLM routing
 │       ├── renderer.js      # DOM manipulation for displaying results
 │       ├── export.js        # JSON file download utility
@@ -49,9 +49,9 @@ PaddleOCR/
 ```
 
 ### The OCR Proxy (`server.js`)
-Because browser security policies (CORS) block direct frontend calls to the PaddleOCR API, `server.js` acts as a middleman.
+Because browser security policies (CORS) block direct frontend calls to the OCR API, `server.js` acts as a middleman.
 1. The frontend (`http://localhost:3001`) POSTs the base64 PDF to `/api/ocr`.
-2. The proxy attaches the secret `PADDLE_TOKEN` and forwards the request via native Node.js `https` (bypassing timeouts for massive 100-page limits).
+2. The proxy attaches the secret API token and forwards the request via native Node.js `https` (bypassing timeouts for massive 100-page limits).
 3. The proxy returns the raw layout JSON back to the browser.
 
 ---
@@ -61,7 +61,7 @@ Because browser security policies (CORS) block direct frontend calls to the Padd
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v16 or higher)
 - API Keys for:
-  - **PaddleOCR** (Studio App Layout Parsing Token)
+  - **OCR Token** (Layout Parsing Token)
   - **OpenAI** (or Anthropic Claude / Google Gemini)
 
 ### 1. Installation
@@ -103,7 +103,7 @@ export const CONFIG = {
 };
 ```
 
-*(Note: The PaddleOCR API Endpoint and Token are configured server-side inside `server.js` or via `.env` variables `PADDLE_URL` and `PADDLE_TOKEN`. You do not need to put the Paddle token in `config.js`.)*
+*(Note: The OCR API Endpoint and Token are configured server-side inside `server.js` or via `.env` variables `PADDLE_URL` and `PADDLE_TOKEN`. You do not need to put the OCR token in `config.js`.)*
 
 ### 3. Run the Application
 
@@ -130,8 +130,8 @@ node server.js
 - **Frontend Core**: HTML5, Vanilla CSS3 (CSS Variables, Flexbox/Grid, Mesh Gradients)
 - **Frontend Logic**: Vanilla JavaScript (ES6 Modules, Async/Await, Fetch API)
 - **Backend / Proxy**: Node.js, Express.js
-- **OCR Engine**: [PaddleOCR Layout Parsing API](https://aistudio.baidu.com/)
-- **Intelligence**: OpenAI API (GPT-4o-mini) - with built-in routing for Anthropic/Google.
+- **OCR Engine**: Advanced Layout Parsing API
+- **Intelligence**: High-performance LLM API
 - **Typography**: [Inter](https://fonts.google.com/specimen/Inter) and [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono)
 
 ---
