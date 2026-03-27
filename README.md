@@ -78,7 +78,12 @@ npm install
 Create a `config.js` file in `assets/js/` (this file is gitignored to protect your keys).
 
 ```bash
-# Copy the structure from the provided .env, or copy/paste this block:
+
+PADDLE_URL=
+PADDLE_TOKEN=
+
+OPENAI_API_KEY=
+LLM_MODEL=
 ```
 
 **`assets/js/config.js`:**
