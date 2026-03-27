@@ -1,7 +1,5 @@
 # FinSight — AI-Powered Bank Statement Analyzer
 
-![FinSight](assets/logo-placeholder.svg) *(Optional: Add a logo here)*
-
 FinSight is a modern, privacy-focused, premium web application designed to automatically extract and analyze financial data from bank statement PDFs.
 
 By combining the robustness of **PaddleOCR's Layout Parsing API** for raw text extraction and the intelligence of **Large Language Models (GPT-4o, Gemini, or Claude)** for structured data parsing, FinSight turns unstructured multi-page bank statements into clear, actionable insights in seconds.
